@@ -5,22 +5,25 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-	"time"
 	"unsafe"
 
 	"bou.ke/monkey"
 )
 
+type _type struct{}
+
 type hchan struct {
-	_      uint
-	_      uint
-	_      unsafe.Pointer
-	_      uint16
-	closed uint32
+	_        uint
+	_        uint
+	_        unsafe.Pointer
+	_        uint16
+	closed   uint32
+	elemtype *_type
 }
 
-type eface struct {
-	typ, val unsafe.Pointer
+type iface struct {
+	_   unsafe.Pointer
+	val unsafe.Pointer
 }
 
 //go:linkname chanrecv1 runtime.chanrecv1
@@ -32,10 +35,29 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool)
 //go:linkname chanrecv runtime.chanrecv
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
-//go:linkname memmove runtime.memmove
-func memmove(dst, src unsafe.Pointer, size int)
+//go:linkname typedmemmove runtime.typedmemmove
+func typedmemmove(tp *_type, dst, src unsafe.Pointer)
 
-var cvalues sync.Map
+//go:linkname typedmemclr runtime.typedmemmove
+func typedmemclr(typ *_type, ptr unsafe.Pointer)
+
+type chStore sync.Map
+
+func (s *chStore) push(key uintptr, val interface{}) {
+	((*sync.Map)(s)).Store(key, val)
+}
+
+func (s *chStore) load(key uintptr, tp *_type, dst unsafe.Pointer) {
+	if val, ok := ((*sync.Map)(s)).Load(key); ok {
+		vptr := (*iface)(unsafe.Pointer(&val)).val
+		if dst == nil {
+			typedmemclr(tp, dst)
+		}
+		typedmemmove(tp, dst, vptr)
+	}
+}
+
+var gstore chStore
 
 func Close(ch interface{}, val interface{}) error {
 	chRef := reflect.ValueOf(ch)
@@ -46,43 +68,35 @@ func Close(ch interface{}, val interface{}) error {
 	if valTp := reflect.ValueOf(val).Type(); valTp.Kind() != chTyp.Elem().Kind() {
 		return fmt.Errorf("provided value type %q doesn't match provided channel type %q", valTp.Kind(), chTyp.Elem().Kind())
 	}
-	cvalues.Store(chRef.Pointer(), val)
+	gstore.push(chRef.Pointer(), val)
 	chRef.Close()
 	return nil
 }
 
-func cload(ch *hchan, elem unsafe.Pointer) {
-	if ch.closed == 1 {
+func load(rec bool, ch *hchan, elem unsafe.Pointer) {
+	if !rec && ch.closed == 1 {
 		ptr := uintptr(unsafe.Pointer(ch))
-		if val, ok := cvalues.Load(ptr); ok {
-			vptr := (*eface)(unsafe.Pointer(&val)).val
-			memmove(elem, vptr, int(unsafe.Sizeof(vptr)))
-		}
+		gstore.load(ptr, ch.elemtype, elem)
 	}
 }
 
-func main() {
+func init() {
 	monkey.Patch(chanrecv1, func(ch *hchan, elem unsafe.Pointer) {
-		chanrecv(ch, elem, true)
-		cload(ch, elem)
+		_, rec := chanrecv(ch, elem, true)
+		load(rec, ch, elem)
 	})
-	monkey.Patch(chanrecv2, func(ch *hchan, elem unsafe.Pointer) (received bool) {
-		_, received = chanrecv(ch, elem, true)
-		cload(ch, elem)
-		return
+	monkey.Patch(chanrecv2, func(ch *hchan, elem unsafe.Pointer) bool {
+		_, rec := chanrecv(ch, elem, true)
+		load(rec, ch, elem)
+		return rec
 	})
-	ch := make(chan int, 2)
-	go func() {
-		select {
-		case v, ok := <-ch:
-			fmt.Println("FROM GOROUTINE", v, ok)
-		}
-	}()
-	time.Sleep(time.Second)
-	Close(ch, 23)
+}
+
+func main() {
+	ch := make(chan []int, 2)
+	ch <- []int{1, 2, 3}
+	fmt.Println(Close(ch, []int{5}))
 	v, ok := <-ch
-	fmt.Println("RESULT", v, ok)
-	v, ok = <-ch
 	fmt.Println("RESULT", v, ok)
 	v, ok = <-ch
 	fmt.Println("RESULT", v, ok)
