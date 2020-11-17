@@ -1,0 +1,5 @@
+module github.com/go2close
+
+go 1.15
+
+require bou.ke/monkey v1.0.2
