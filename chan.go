@@ -1,34 +1,12 @@
-package main
+package go2close
 
 import (
 	"C"
-	"fmt"
-	"reflect"
 	"sync"
 	"unsafe"
 
 	"bou.ke/monkey"
 )
-
-type NotWritableChannel struct {
-	Kind reflect.Kind
-	Dir  *reflect.ChanDir
-}
-
-func (err NotWritableChannel) Error() string {
-	if err.Dir != nil {
-		return fmt.Sprintf("provided entity %q is not a writable channel", *err.Dir)
-	}
-	return fmt.Sprintf("provided entity %q is not a writable channel", err.Kind)
-}
-
-type ChannelTypeMismatch struct {
-	ValKind, ChKind reflect.Kind
-}
-
-func (err ChannelTypeMismatch) Error() string {
-	return fmt.Sprintf("provided value %q doesn't match provided channel %q", err.ChKind, err.ValKind)
-}
 
 type _type struct {
 	_    uintptr
@@ -65,8 +43,6 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 //go:linkname typedmemmove runtime.typedmemmove
 func typedmemmove(tp *_type, dst, src unsafe.Pointer)
-
-var gchStore chStore
 
 type chStore sync.Map
 
@@ -107,28 +83,6 @@ func (s *chStore) proc(rec bool, ch *hchan, elem unsafe.Pointer) {
 	}
 }
 
-type Cancel func()
-
-func Close2(ch interface{}, val interface{}) (Cancel, error) {
-	chRef := reflect.ValueOf(ch)
-	chTyp := chRef.Type()
-	if chTyp.Kind() != reflect.Chan {
-		return nil, NotWritableChannel{Kind: chTyp.Kind()}
-	}
-	if dir := chTyp.ChanDir(); dir&reflect.SendDir == 0 {
-		return nil, NotWritableChannel{Kind: chTyp.Kind(), Dir: &dir}
-	}
-	if valTp := reflect.ValueOf(val).Type(); valTp.Kind() != chTyp.Elem().Kind() {
-		return nil, ChannelTypeMismatch{ValKind: valTp.Kind(), ChKind: chTyp.Elem().Kind()}
-	}
-	key := chRef.Pointer()
-	if !gchStore.has(key) {
-		chRef.Close()
-	}
-	gchStore.push(key, val)
-	return func() { gchStore.del(key) }, nil
-}
-
 func init() {
 	monkey.Patch(chanrecv1, func(ch *hchan, elem unsafe.Pointer) {
 		_, rec := chanrecv(ch, elem, true)
@@ -141,13 +95,4 @@ func init() {
 	})
 }
 
-func main() {
-	ch := make(chan map[string]int, 2)
-	ch <- map[string]int{"foo": 1}
-	_, err := Close2(ch, map[string]int{"var": 1})
-	fmt.Println(err)
-	v, ok := <-ch
-	fmt.Println("RESULT", v, ok)
-	v, ok = <-ch
-	fmt.Println("RESULT", v, ok)
-}
+var gchStore chStore
