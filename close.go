@@ -1,4 +1,4 @@
-package go2close
+package golock
 
 import (
 	"C"
@@ -28,22 +28,22 @@ func (err ChannelTypeMismatch) Error() string {
 	return fmt.Sprintf("provided value kind %q doesn't match provided underlying channel kind %q", err.ValKind, err.ChKind)
 }
 
-// Cancel defines close2 cancelation function type.
+// Cancel defines Close cancelation function type.
 type Cancel func()
 
-// Close2 idempotently closes provided chan and stores provided value
+// Close idempotently closes provided chan and stores provided value
 // to return as this channel closed value instead of empty value.
 // If provided channel is not a writable channel `NotWritableChannel` error is returned.
 // If provided value doesn't match underlying channel type `ChannelTypeMismatch` error is returned.
 // To cancel the effect of closed value replace call cancel function.
 // Note that provided value won't be automatically collected by GC together with provided channel
 // to remove provided value from the storage call cancel function.
-// Note that after cancelation is called next call to Close2 will cause a panic `close of closed channel`.
-// Note that unless cancelation is called next call to Close2 is safe and won't cause any panic
+// Note that after cancelation is called next call to Close will cause a panic `close of closed channel`.
+// Note that unless cancelation is called next call to Close is safe and won't cause any panic
 // but just update storage value with new provided value.
-// Note that in order to achieve such effect go2close uses `bou.ke/monkey` package
-// to patch all existing channel receive entrypoints, so go2close inherits the same list of restrictions.
-func Close2(ch interface{}, val interface{}) (Cancel, error) {
+// Note that in order to achieve such effect golock uses `bou.ke/monkey` package
+// to patch all existing channel receive entrypoints, so golock inherits the same list of restrictions.
+func Close(ch interface{}, val interface{}) (Cancel, error) {
 	chRef := reflect.ValueOf(ch)
 	chTyp := chRef.Type()
 	if chTyp.Kind() != reflect.Chan {
