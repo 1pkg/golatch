@@ -38,6 +38,15 @@ func chanrecv1(c *hchan, elem unsafe.Pointer)
 //go:linkname chanrecv2 runtime.chanrecv2
 func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool)
 
+//go:linkname selectnbrecv runtime.selectnbrecv
+func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected bool)
+
+//go:linkname selectnbrecv2 runtime.selectnbrecv2
+func selectnbrecv2(elem unsafe.Pointer, received *bool, c *hchan) (selected bool)
+
+//go:linkname reflect_chanrecv runtime.reflect_chanrecv
+func reflect_chanrecv(c *hchan, nb bool, elem unsafe.Pointer) (selected bool, received bool)
+
 //go:linkname chanrecv runtime.chanrecv
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
@@ -92,6 +101,22 @@ func init() {
 		_, rec := chanrecv(ch, elem, true)
 		gchStore.proc(rec, ch, elem)
 		return rec
+	})
+	monkey.Patch(selectnbrecv, func(elem unsafe.Pointer, ch *hchan) bool {
+		sel, rec := chanrecv(ch, elem, false)
+		gchStore.proc(rec, ch, elem)
+		return sel
+	})
+	monkey.Patch(selectnbrecv2, func(elem unsafe.Pointer, recv *bool, ch *hchan) bool {
+		sel, rec := chanrecv(ch, elem, false)
+		gchStore.proc(rec, ch, elem)
+		*recv = rec
+		return sel
+	})
+	monkey.Patch(reflect_chanrecv, func(ch *hchan, nb bool, elem unsafe.Pointer) (bool, bool) {
+		sel, rec := chanrecv(ch, elem, !nb)
+		gchStore.proc(rec, ch, elem)
+		return sel, rec
 	})
 }
 
