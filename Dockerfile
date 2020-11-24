@@ -1,7 +1,7 @@
 FROM golang:1.15
 
-RUN mkdir -p $GOPATH/src/github.com/1pkg/go2close
-WORKDIR $GOPATH/src/github.com/1pkg/go2close
+RUN mkdir -p $GOPATH/src/github.com/1pkg/golock
+WORKDIR $GOPATH/src/github.com/1pkg/golock
 ADD ./* ./
 ADD ./vendor ./vendor
 

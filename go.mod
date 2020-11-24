@@ -1,4 +1,4 @@
-module github.com/1pkg/go2close
+module github.com/1pkg/golock
 
 go 1.15
 

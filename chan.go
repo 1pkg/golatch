@@ -1,4 +1,4 @@
-package go2close
+package golock
 
 import (
 	"C"
