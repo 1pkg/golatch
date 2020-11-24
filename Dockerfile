@@ -1,7 +1,8 @@
-FROM golang:1.15.3
+FROM golang:1.15
 
-COPY main.go main.go
-RUN go get bou.ke/monkey
-RUN go build -o /var/main main.go
+RUN mkdir -p $GOPATH/src/github.com/1pkg/go2close
+WORKDIR $GOPATH/src/github.com/1pkg/go2close
+ADD ./* ./
+RUN go get -v
 
-ENTRYPOINT [ "/var/main" ]
+CMD ["go", "test", "-v", "-race", "-count=1", "-coverprofile", "test.cover", "./..."]
