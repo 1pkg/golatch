@@ -15,7 +15,7 @@ func (err NotWritableChannel) Error() string {
 	if err.Dir != nil {
 		return fmt.Sprintf("provided entity %q is not a writable channel", *err.Dir)
 	}
-	return fmt.Sprintf("provided entity %q is not a writable channel", err.Kind)
+	return fmt.Sprintf("provided entity kind %q is not a writable channel", err.Kind)
 }
 
 type ChannelTypeMismatch struct {
@@ -23,7 +23,7 @@ type ChannelTypeMismatch struct {
 }
 
 func (err ChannelTypeMismatch) Error() string {
-	return fmt.Sprintf("provided value %q doesn't match provided channel %q", err.ChKind, err.ValKind)
+	return fmt.Sprintf("provided value kind %q doesn't match provided channel kind %q", err.ValKind, err.ChKind)
 }
 
 type Cancel func()
