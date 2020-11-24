@@ -100,8 +100,8 @@ func (s *chStore) proc(rec bool, ch *hchan, elem unsafe.Pointer) {
 
 // init patches all existing chan receive entrypoints
 // - direct chan receive
-// - select statement
-// - reflect receive
+// - chan select statement
+// - reflect chan receive
 func init() {
 	monkey.Patch(chanrecv1, func(ch *hchan, elem unsafe.Pointer) {
 		_, rec := chanrecv(ch, elem, true)
