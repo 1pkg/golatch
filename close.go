@@ -41,7 +41,7 @@ type Cancel func()
 // Note that after cancelation is called next call to Close2 will cause a panic `close of closed channel`.
 // Note that unless cancelation is called next call to Close2 is safe and won't cause any panic
 // but just update storage value with new provided value.
-// Note that in order to achive such effect go2close uses `bou.ke/monkey` package
+// Note that in order to achieve such effect go2close uses `bou.ke/monkey` package
 // to patch all existing channel receive entrypoints, so go2close inherits the same list of restrictions.
 func Close2(ch interface{}, val interface{}) (Cancel, error) {
 	chRef := reflect.ValueOf(ch)
