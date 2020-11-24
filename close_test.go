@@ -103,7 +103,7 @@ func TestClose2Invariant(t *testing.T) {
 	ch := make(chan int)
 	_, err = Close2(ch, "bbbb")
 	require.EqualValues(t, ChannelTypeMismatch{ValKind: reflect.String, ChKind: reflect.Int}, err)
-	require.EqualValues(t, `provided value kind "string" doesn't match provided channel kind "int"`, err.Error())
+	require.EqualValues(t, `provided value kind "string" doesn't match provided underlying channel kind "int"`, err.Error())
 }
 
 func TestClose2Idempotence(t *testing.T) {

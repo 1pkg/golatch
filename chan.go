@@ -8,7 +8,8 @@ import (
 	"bou.ke/monkey"
 )
 
-type _type struct {
+// tp from `runtime._type`
+type tp struct {
 	_    uintptr
 	_    uintptr
 	_    uint32
@@ -18,17 +19,19 @@ type _type struct {
 	kind uint8
 }
 
+// hchan from `runtime.chan`
 type hchan struct {
 	_        uint
 	_        uint
 	_        unsafe.Pointer
 	_        uint16
 	closed   uint32
-	elemtype *_type
+	elemtype *tp
 }
 
+// iface from `runtime.type`
 type iface struct {
-	_   *_type
+	_   *tp
 	val unsafe.Pointer
 }
 
@@ -51,12 +54,13 @@ func reflectChanrecv(c *hchan, nb bool, elem unsafe.Pointer) (selected bool, rec
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 //go:linkname typedmemmove runtime.typedmemmove
-func typedmemmove(tp *_type, dst, src unsafe.Pointer)
+func typedmemmove(tp *tp, dst, src unsafe.Pointer)
 
 type chStore sync.Map
 
-func (*chStore) deref(val interface{}, tp *_type) unsafe.Pointer {
+func (*chStore) deref(val interface{}, tp *tp) unsafe.Pointer {
 	ifc := (*iface)(unsafe.Pointer(&val))
+	// see `reflect.ifaceIndir` implementation of indirect check
 	if tp.kind&32 == 0 {
 		return ifc.val
 	}
@@ -76,8 +80,9 @@ func (s *chStore) push(key uintptr, val interface{}) {
 	((*sync.Map)(s)).Store(key, val)
 }
 
-func (s *chStore) load(key uintptr, tp *_type, dst unsafe.Pointer) {
+func (s *chStore) load(key uintptr, tp *tp, dst unsafe.Pointer) {
 	if val, ok := ((*sync.Map)(s)).Load(key); ok {
+		// see `runtime.chanrecv` implementation of new message read
 		if dst == nil {
 			return
 		}
@@ -86,12 +91,17 @@ func (s *chStore) load(key uintptr, tp *_type, dst unsafe.Pointer) {
 }
 
 func (s *chStore) proc(rec bool, ch *hchan, elem unsafe.Pointer) {
-	if !rec && ch.closed == 1 {
+	// procces only if chan is closed and drained
+	if ch.closed == 1 && !rec {
 		ptr := uintptr(unsafe.Pointer(ch))
 		s.load(ptr, ch.elemtype, elem)
 	}
 }
 
+// init patches all existing chan receive entrypoints
+// - direct chan receive
+// - select statement
+// - reflect receive
 func init() {
 	monkey.Patch(chanrecv1, func(ch *hchan, elem unsafe.Pointer) {
 		_, rec := chanrecv(ch, elem, true)
