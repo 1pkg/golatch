@@ -35,6 +35,18 @@ type iface struct {
 	val unsafe.Pointer
 }
 
+// scase from `runtime.scase`
+type scase struct {
+	ch   *hchan
+	elem unsafe.Pointer
+}
+
+//go:linkname chanrecv runtime.chanrecv
+func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
+
+//go:linkname typedmemmove runtime.typedmemmove
+func typedmemmove(tp *tp, dst, src unsafe.Pointer)
+
 //go:linkname chanrecv1 runtime.chanrecv1
 func chanrecv1(c *hchan, elem unsafe.Pointer)
 
@@ -50,11 +62,8 @@ func selectnbrecv2(elem unsafe.Pointer, received *bool, c *hchan) (selected bool
 //go:linkname reflectChanrecv reflect.chanrecv
 func reflectChanrecv(c *hchan, nb bool, elem unsafe.Pointer) (selected bool, received bool)
 
-//go:linkname chanrecv runtime.chanrecv
-func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
-
-//go:linkname typedmemmove runtime.typedmemmove
-func typedmemmove(tp *tp, dst, src unsafe.Pointer)
+//go:linkname selectgo runtime.selectgo
+func selectgo(cas0 *scase, order0 *uint16, ncases int) (int, bool)
 
 type chStore sync.Map
 
@@ -102,6 +111,8 @@ func (s *chStore) proc(rec bool, ch *hchan, elem unsafe.Pointer) {
 // - direct chan receive
 // - chan select statement
 // - reflect chan receive
+// Note that multiselect statement is patched via patch guard,
+// which makes it not thread safe.
 func init() {
 	gomonkey.Patch(chanrecv1, func(ch *hchan, elem unsafe.Pointer) {
 		_, rec := chanrecv(ch, elem, true)
@@ -127,6 +138,19 @@ func init() {
 		sel, rec := chanrecv(ch, elem, !nb)
 		gchStore.proc(rec, ch, elem)
 		return sel, rec
+	})
+	var g *gomonkey.PatchGuard
+	g = gomonkey.Patch(selectgo, func(cas0 *scase, order0 *uint16, ncases int) (int, bool) {
+		g.Unpatch()
+		defer g.Restore()
+		idx, rec := selectgo(cas0, order0, ncases)
+		// NOTE: In order to maintain a lean stack size, the number of scases
+		// is capped at 65536.
+		cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))
+		scases := cas1[:ncases:ncases]
+		obj := scases[idx]
+		gchStore.proc(rec, obj.ch, obj.elem)
+		return idx, rec
 	})
 }
 
