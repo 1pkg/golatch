@@ -1,22 +1,22 @@
-# Golock 🔒
+# Golatch 🔒
 
-[![lint](https://github.com/1pkg/golock/workflows/lint/badge.svg)](https://github.com/1pkg/golock/actions?query=workflow%3Alint+branch%3Amaster+)
-[![test](https://github.com/1pkg/golock/workflows/test/badge.svg)](https://github.com/1pkg/golock/actions?query=workflow%3Atest+branch%3Amaster+)
-[![report](https://goreportcard.com/badge/github.com/1pkg/golock)](https://goreportcard.com/report/github.com/1pkg/golock)
-[![version](https://img.shields.io/github/go-mod/go-version/1pkg/golock)](https://github.com/1pkg/golock/blob/master/go.mod)
-[![license](https://img.shields.io/github/license/1pkg/golock)](LICENSE)
-[![godoc](https://img.shields.io/badge/godoc-godoc-green)](https://pkg.go.dev/github.com/1pkg/golock?tab=doc)
+[![lint](https://github.com/1pkg/golatch/workflows/lint/badge.svg)](https://github.com/1pkg/golatch/actions?query=workflow%3Alint+branch%3Amaster+)
+[![test](https://github.com/1pkg/golatch/workflows/test/badge.svg)](https://github.com/1pkg/golatch/actions?query=workflow%3Atest+branch%3Amaster+)
+[![report](https://goreportcard.com/badge/github.com/1pkg/golatch)](https://goreportcard.com/report/github.com/1pkg/golatch)
+[![version](https://img.shields.io/github/go-mod/go-version/1pkg/golatch)](https://github.com/1pkg/golatch/blob/master/go.mod)
+[![license](https://img.shields.io/github/license/1pkg/golatch)](LICENSE)
+[![godoc](https://img.shields.io/badge/godoc-godoc-green)](https://pkg.go.dev/github.com/1pkg/golatch?tab=doc)
 
-`go get -u github.com/1pkg/golock`
+`go get -u github.com/1pkg/golatch`
 
 ## Introduction
 
-Golock patches go runtime to provides a way to close a chan idempotently + overwrite empty value returned from that closed channel.
+Golatch patches go runtime to provides a way to close a chan idempotently + overwrite empty value returned from that closed channel.
 
 <table>
 <tr>
-<th>With Golock</th>
-<th>Without Golock</th>
+<th>With Golatch</th>
+<th>Without Golatch (plain go)</th>
 </tr>
 
 <tr>
@@ -28,7 +28,7 @@ package main
 import (
 	"fmt"
 	"sync"
-	"github.com/1pkg/golock"
+	"github.com/1pkg/golatch"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 	for i := 0; i < 5; i++ {
 		go worker(i, ch, &wg)
 	}
-	golock.Close(ch, 10)
+	golatch.Close(ch, 10)
 	wg.Wait()
 }
 
@@ -90,16 +90,16 @@ func worker(i int, ch chan int, wg *sync.WaitGroup) {
 
 ## Internals
 
-Golock exposes single function `Close` that idempotently closes provided chan and stores provided value to return as this channel closed value instead of empty value. If provided channel is not a writable channel `NotWritableChannel` error is returned. If provided value doesn't match underlying channel type `ChannelTypeMismatch` error is returned.  
-To cancel the effect of closed value replace call cancel function. Note that provided value won't be automatically collected by GC together with provided channel to remove provided value from the storage call cancel function. Note that after cancelation is called next call to `Close` will cause a panic `close of closed channel`. Note that unless cancelation is called next call to `Close` is safe and won't cause any panic but just update storage value with new provided value. Note that in order to achieve such effect golock uses [bou.ke/monkey](https://github.com/bouk/monkey) package to patch all existing channel receive entrypoints:
+Golatch exposes single function `Close` that idempotently closes provided chan and stores provided value to return as this channel closed value instead of empty value. If provided channel is not a writable channel `NotWritableChannel` error is returned. If provided value doesn't match underlying channel type `ChannelTypeMismatch` error is returned.  
+To cancel the effect of closed value replace call cancel function. Note that provided value won't be automatically collected by GC together with provided channel to remove provided value from the storage call cancel function. Note that after cancelation is called next call to `Close` will cause a panic `close of closed channel`. Note that unless cancelation is called next call to `Close` is safe and won't cause any panic but just update storage value with new provided value. Note that in order to achieve such effect golatch uses [bou.ke/monkey](https://github.com/bouk/monkey) package to patch all existing channel receive entrypoints:
 
 - direct chan receive
 - chan select statement
 - reflect chan receive
 
-This makes golock inherits the same list of restrictions as `bou.ke/monkey` [has](https://github.com/bouk/monkey#notes).
+This makes golatch inherits the same list of restrictions as `bou.ke/monkey` [has](https://github.com/bouk/monkey#notes).
 
 ## Licence
 
-Golock is licensed under the MIT License.  
+Golatch is licensed under the MIT License.  
 See [LICENSE](LICENSE) for the full license text.

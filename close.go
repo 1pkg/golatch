@@ -1,4 +1,4 @@
-package golock
+package golatch
 
 import (
 	"C"
@@ -41,8 +41,8 @@ type Cancel func()
 // Note that after cancelation is called next call to Close will cause a panic `close of closed channel`.
 // Note that unless cancelation is called next call to Close is safe and won't cause any panic
 // but just update storage value with new provided value.
-// Note that in order to achieve such effect golock uses `bou.ke/monkey` package
-// to patch all existing channel receive entrypoints, so golock inherits the same list of restrictions.
+// Note that in order to achieve such effect golatch uses `bou.ke/monkey` package
+// to patch all existing channel receive entrypoints, so golatch inherits the same list of restrictions.
 func Close(ch interface{}, val interface{}) (Cancel, error) {
 	chRef := reflect.ValueOf(ch)
 	chTyp := chRef.Type()

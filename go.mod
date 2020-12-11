@@ -1,4 +1,4 @@
-module github.com/1pkg/golock
+module github.com/1pkg/golatch
 
 go 1.15
 
