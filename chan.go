@@ -5,7 +5,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"bou.ke/monkey"
+	"github.com/1pkg/gomonkey"
 )
 
 // tp from `runtime._type`
@@ -103,27 +103,27 @@ func (s *chStore) proc(rec bool, ch *hchan, elem unsafe.Pointer) {
 // - chan select statement
 // - reflect chan receive
 func init() {
-	monkey.Patch(chanrecv1, func(ch *hchan, elem unsafe.Pointer) {
+	gomonkey.Patch(chanrecv1, func(ch *hchan, elem unsafe.Pointer) {
 		_, rec := chanrecv(ch, elem, true)
 		gchStore.proc(rec, ch, elem)
 	})
-	monkey.Patch(chanrecv2, func(ch *hchan, elem unsafe.Pointer) bool {
+	gomonkey.Patch(chanrecv2, func(ch *hchan, elem unsafe.Pointer) bool {
 		_, rec := chanrecv(ch, elem, true)
 		gchStore.proc(rec, ch, elem)
 		return rec
 	})
-	monkey.Patch(selectnbrecv, func(elem unsafe.Pointer, ch *hchan) bool {
+	gomonkey.Patch(selectnbrecv, func(elem unsafe.Pointer, ch *hchan) bool {
 		sel, rec := chanrecv(ch, elem, false)
 		gchStore.proc(rec, ch, elem)
 		return sel
 	})
-	monkey.Patch(selectnbrecv2, func(elem unsafe.Pointer, recv *bool, ch *hchan) bool {
+	gomonkey.Patch(selectnbrecv2, func(elem unsafe.Pointer, recv *bool, ch *hchan) bool {
 		sel, rec := chanrecv(ch, elem, false)
 		gchStore.proc(rec, ch, elem)
 		*recv = rec
 		return sel
 	})
-	monkey.Patch(reflectChanrecv, func(ch *hchan, nb bool, elem unsafe.Pointer) (bool, bool) {
+	gomonkey.Patch(reflectChanrecv, func(ch *hchan, nb bool, elem unsafe.Pointer) (bool, bool) {
 		sel, rec := chanrecv(ch, elem, !nb)
 		gchStore.proc(rec, ch, elem)
 		return sel, rec

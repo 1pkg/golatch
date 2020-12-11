@@ -11,7 +11,7 @@
 
 ## Introduction
 
-Golatch patches go runtime to provides a way to close a chan idempotently + overwrite empty value returned from that closed channel.
+Golatch patches go runtime to provide a way to close a chan idempotently + overwrite empty value returned from that closed channel.
 
 <table>
 <tr>
@@ -91,7 +91,7 @@ func worker(i int, ch chan int, wg *sync.WaitGroup) {
 ## Internals
 
 Golatch exposes single function `Close` that idempotently closes provided chan and stores provided value to return as this channel closed value instead of empty value. If provided channel is not a writable channel `NotWritableChannel` error is returned. If provided value doesn't match underlying channel type `ChannelTypeMismatch` error is returned.  
-To cancel the effect of closed value replace call cancel function. Note that provided value won't be automatically collected by GC together with provided channel to remove provided value from the storage call cancel function. Note that after cancelation is called next call to `Close` will cause a panic `close of closed channel`. Note that unless cancelation is called next call to `Close` is safe and won't cause any panic but just update storage value with new provided value. Note that in order to achieve such effect golatch uses [bou.ke/monkey](https://github.com/bouk/monkey) package to patch all existing channel receive entrypoints:
+To cancel the effect of closed value replace call cancel function. Note that provided value won't be automatically collected by GC together with provided channel to remove provided value from the storage call cancel function. Note that after cancelation is called next call to `Close` will cause a panic `close of closed channel`. Note that unless cancelation is called next call to `Close` is safe and won't cause any panic but just update storage value with new provided value. Note that in order to achieve such effect golatch uses package based on [bou.ke/monkey](https://github.com/bouk/monkey) to patch all existing channel receive entrypoints:
 
 - direct chan receive
 - chan select statement
