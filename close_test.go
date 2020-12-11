@@ -179,12 +179,14 @@ func TestCloseMulti(t *testing.T) {
 
 func TestCloseSelect(t *testing.T) {
 	ch := make(chan int)
+	cht := make(chan int)
 	del, err := Close(ch, 10)
 	require.NoError(t, err)
 	select {
 	case v, ok := <-ch:
 		require.EqualValues(t, 10, v)
 		require.EqualValues(t, false, ok)
+	case <-cht:
 	default:
 		require.True(t, false)
 	}
@@ -193,6 +195,7 @@ func TestCloseSelect(t *testing.T) {
 	case v, ok := <-ch:
 		require.EqualValues(t, 0, v)
 		require.EqualValues(t, false, ok)
+	case <-cht:
 	default:
 		require.True(t, false)
 	}

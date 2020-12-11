@@ -97,6 +97,7 @@ To cancel the effect of closed value replace call cancel function. Note that pro
 - chan select statement
 - reflect chan receive
 
+Note that multiselect statement is patched via patch guard, which makes it not thread safe.
 This makes golatch inherits the same list of restrictions as `bou.ke/monkey` [has](https://github.com/bouk/monkey#notes).
 
 ## Licence
