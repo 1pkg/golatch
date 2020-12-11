@@ -1,4 +1,4 @@
-package golock
+package golatch
 
 import (
 	"reflect"
