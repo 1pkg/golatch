@@ -195,9 +195,14 @@ func TestCloseSelect(t *testing.T) {
 	case v, ok := <-ch:
 		require.EqualValues(t, 0, v)
 		require.EqualValues(t, false, ok)
-	case <-cht:
 	default:
 		require.True(t, false)
+	}
+	select {
+	case <-cht:
+		require.True(t, false)
+	default:
+		require.True(t, true)
 	}
 }
 

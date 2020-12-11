@@ -101,7 +101,7 @@ func (s *chStore) load(key uintptr, tp *tp, dst unsafe.Pointer) {
 
 func (s *chStore) proc(rec bool, ch *hchan, elem unsafe.Pointer) {
 	// procces only if chan is closed and drained
-	if ch.closed == 1 && !rec {
+	if ch != nil && ch.closed == 1 && !rec {
 		ptr := uintptr(unsafe.Pointer(ch))
 		s.load(ptr, ch.elemtype, elem)
 	}
