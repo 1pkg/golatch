@@ -2,21 +2,24 @@
 
 [![lint](https://github.com/1pkg/golatch/workflows/lint/badge.svg)](https://github.com/1pkg/golatch/actions?query=workflow%3Alint+branch%3Amaster+)
 [![test](https://github.com/1pkg/golatch/workflows/test/badge.svg)](https://github.com/1pkg/golatch/actions?query=workflow%3Atest+branch%3Amaster+)
-[![report](https://goreportcard.com/badge/github.com/1pkg/golatch)](https://goreportcard.com/report/github.com/1pkg/golatch)
+[![report](https://goreportcard.com/badge/github.com/1pkg/golatch?cache=false)](https://goreportcard.com/report/github.com/1pkg/golatch)
 [![version](https://img.shields.io/github/go-mod/go-version/1pkg/golatch)](https://github.com/1pkg/golatch/blob/master/go.mod)
-[![license](https://img.shields.io/github/license/1pkg/golatch)](LICENSE)
+[![license](https://img.shields.io/github/license/1pkg/golatch?cache=false)](LICENSE)
 [![godoc](https://img.shields.io/badge/godoc-godoc-green)](https://pkg.go.dev/github.com/1pkg/golatch?tab=doc)
 
 `go get -u github.com/1pkg/golatch`
 
+[original blog post article](https://1pkg.github.io/posts/lets_make_closed_channels_more_useful/)  
+[medium mirror article](https://1pkg.medium.com/lets-make-closed-channels-more-useful-hacking-go-runtime-1329046735b5)
+
 ## Introduction
 
-Golatch patches go runtime to provide a way to close a chan idempotently + overwrite empty value returned from that closed channel.
+Golatch seamlessly patches go runtime to provide a way to close a chan idempotently + overwrite empty value returned from that closed channel.
 
 <table>
 <tr>
 <th>With Golatch</th>
-<th>Without Golatch (plain go)</th>
+<th>Without Golatch</th>
 </tr>
 
 <tr>
@@ -28,6 +31,7 @@ package main
 import (
 	"fmt"
 	"sync"
+
 	"github.com/1pkg/golatch"
 )
 
