@@ -9,8 +9,7 @@
 
 `go get -u github.com/1pkg/golatch`
 
-[original blog post article](https://1pkg.github.io/posts/lets_make_closed_channels_more_useful/)  
-[medium mirror article](https://1pkg.medium.com/lets-make-closed-channels-more-useful-hacking-go-runtime-1329046735b5)
+[blog post article](https://1pkg.github.io/posts/lets_make_closed_channels_more_useful/)
 
 ## Introduction
 
