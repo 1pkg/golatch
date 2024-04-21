@@ -9,12 +9,12 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v4
         with:
           version: v1.31
           args: -E misspell -E golint
